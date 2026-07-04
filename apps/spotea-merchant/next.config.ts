@@ -1,10 +1,10 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  basePath: "/merchant",
-  assetPrefix: "/merchant",
-  transpilePackages: ["@repo/ui"],
+  output: 'standalone',
+  basePath: '/merchant',
+  assetPrefix: '/merchant',
+  transpilePackages: ['@repo/ui'],
   reactCompiler: true,
 };
 

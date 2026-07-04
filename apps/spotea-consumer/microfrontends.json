@@ -1,7 +1,6 @@
 {
   "$schema": "https://turborepo.dev/microfrontends/schema.json",
   "applications": {
-
     "spotea-consumer": {
       "development": {
         "local": {
