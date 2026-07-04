@@ -1,5 +1,5 @@
 {
-  "name": "kumatravel-mfe",
+  "name": "spotea-mfe",
   "private": true,
   "scripts": {
     "build": "turbo run build",

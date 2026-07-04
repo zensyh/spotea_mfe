@@ -40,14 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.idea
-.vscode
-
-.local
-.docs
-
 DESIGN.md
 AGENTS.md
 CLAUDE.md
 opencode.json
 .opencode
+.local
