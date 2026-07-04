@@ -1,159 +1,158 @@
-# Turborepo starter
+# Spotea — Cafe Finder Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+**Microfrontend Multizones · Turborepo · Next.js 16 · Bun**
 
-## Using this example
+Spotea adalah platform cafe finder dengan arsitektur Microfrontend Multizones.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## Prasyarat
+
+| Tools | Versi | Cek |
+|---|---|---|
+| **Bun** | ≥ 1.3.14 | `bun --version` |
+| **Node.js** | ≥ 18 | `node --version` |
+| **Docker Desktop** | latest | `docker --version` |
+| **Git** | ≥ 2.x | `git --version` |
+
+> Docker hanya diperlukan untuk reverse proxy di dev (nginx) dan production build.
+> App bisa dijalankan tanpa Docker — tapi cross-zone link tidak akan work.
+
+---
+
+## Quick Start (5 menit)
+
+```bash
+# 1. Clone
+git clone <repo-url> spotea-mfe && cd spotea-mfe
+
+# 2. Install dependencies
+bun install
+
+# 3. Setup environment
+cp .env.example .env
+
+# 4. Jalankan semua app
+bun dev
 ```
 
-## What's inside?
+Buka di browser:
+| App | URL | Port |
+|---|---|---|
+| Consumer | http://localhost:3000 | 3000 |
+| Merchant | http://localhost:3001/merchant | 3001 |
+| Back Office | http://localhost:3002/backoffice | 3002 |
 
-This Turborepo includes the following packages/apps:
+> **Catatan:** Tanpa reverse proxy, cross-zone link (misal dari consumer ke `/merchant`) akan **404**
+> karena setiap app berjalan di port berbeda. Untuk cross-zone link yang working, lanjut ke Setup Reverse Proxy.
 
-### Apps and Packages
+---
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Setup Reverse Proxy (cross-zone link working)
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+```bash
+# 1. Jalankan 3 app di host
+bun dev
 
-### Utilities
+# 2. Di terminal terpisah, jalankan nginx reverse proxy
+docker compose -f docker-compose.dev.yml up
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+# 3. Semua app bisa diakses dari 1 origin (port 80)
+open http://localhost
 ```
 
-Without global `turbo`, use your package manager:
+Dengan reverse proxy, `<a href="/merchant">` dari consumer akan diresolve ke port yang benar
+oleh nginx. Cookie, auth, semuanya bekerja dalam 1 origin — persis seperti di production.
 
-```sh
-cd my-turborepo
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
+**Yang jalan di Docker:** nginx saja. Apps tetap di host.
+
+---
+
+
+### Filter per app
+
+```bash
+bun dev --filter=spotea-merchant
+bun lint --filter=spotea-consumer
+bun check-types --filter=spotea-backoffice
+bun run build --filter=spotea-merchant
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Contoh Penambahan Dependency
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+```bash
+bun add zustand --filter=spotea-consumer      # tambah ke 1 app
+bun add -d vitest --filter=@repo/ui            # tambah ke package
 ```
 
-Without global `turbo`:
+### Routing
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+Setiap app adalah Next.js standalone — bukan module federation. Nginx/Vercel memutuskan app mana
+yang menangani request berdasarkan path. Production deployment: app di-deploy terpisah, reverse
+proxy di depan (Vercel Multi-Zones / nginx).
+
+---
+
+## Production Build (Docker)
+
+```bash
+# Build & run semua service
+docker compose up --build
+
+# Hanya build image (tanpa run)
+docker compose build
+
+# Stop
+docker compose down
 ```
 
-### Develop
+Setiap app punya multi-stage `Dockerfile` (`deps -> builder -> runner`) dengan Next.js
+`output: "standalone"` — menghasilkan runtime image minimal.
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+# Build 1 app saja
+docker build -f apps/spotea-consumer/Dockerfile -t spotea-consumer .
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+## Environment Variables
+
+Copy template dan isi:
+
+```bash
+cp .env.example .env
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+| Variabel | Wajib | Keterangan |
+|---|---|---|
+| `BACKEND_API_URL` | ya | URL REST API backend |
+| `JWT_SECRET` | ya | Min 32 karakter, untuk sign JWT |
+| `NEXT_PUBLIC_APP_URL` | ya | `http://localhost` (dev) / `https://spotea.com` (prod) |
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+---
 
-```sh
-turbo dev --filter=web
+## Tech Stack
+
+| Teknologi | Versi |
+|---|---|
+| Next.js | 16.2.10 |
+| React | 19.2.4 |
+| TypeScript | 5.9 |
+| Tailwind CSS | v4 |
+| Turborepo | 2.10 |
+| Bun | 1.3.14 |
+
+> **Next.js 16 breaking changes:** `middleware.ts` deprecated -> gunakan `proxy.ts`.
+
+
+## Verifikasi Sebelum Push/PR
+
+```bash
+bun lint && bun check-types && bun run build
 ```
 
-Without global `turbo`:
+Ketiganya harus **0 error** sebelum push.
 
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
-```
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+-zeinirfansyah

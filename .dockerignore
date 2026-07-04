@@ -1,0 +1,28 @@
+# =============================================================================
+# .dockerignore — exclude files from Docker build context
+# =============================================================================
+node_modules
+.git
+.next
+.vercel
+.turbo
+out
+dist
+build
+coverage
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+*.pem
+.local
+.docs
+.idea
+.vscode
+nginx
+docker-compose.yml
+docker-compose.dev.yml
+Dockerfile
+*.md
+!README.md
