@@ -3,14 +3,14 @@
 **Microfrontend Multizones · Turborepo · Next.js 16 · Bun**
 
 Spotea is a coffeeshop finder platform where customers discover cafes, merchants manage
-their profiles, and back office admins run the platform. Three separate
+their profiles, and admins run the platform. Five separate
 Next.js apps behind one domain, each owned by a different context.
 
 ---
 
 ## Prerequisites
 
-- **Bun** (1.3.14 or newer), 
+- **Bun** (1.3.14 or newer),
 - **Node.js** (18 or above),
 - **Docker Desktop**
 
@@ -40,23 +40,25 @@ cp .env.example .env
 bun dev
 ```
 
-That gives you three dev servers:
+That gives you five dev servers:
 
-- Consumer at `http://localhost:3000` - the main customer-facing site.
-- Merchant at `http://localhost:3001/merchant` - the cafe owner dashboard.
-- Back Office at `http://localhost:3002/backoffice` - platform administration.
+- Shell at `http://localhost:3000` — landing page and public routing (no basePath).
+- Merchant at `http://localhost:3001/merchant` — cafe owner dashboard.
+- Admin at `http://localhost:3002/admin` — platform administration.
+- Consumer at `http://localhost:3003/consumer` — customer-facing cafe discovery.
+- Account at `http://localhost:3004/account` — user profile and settings.
 
 Since each app runs on its own port, cross-zone links like `/merchant` clicked from
-the consumer app won't resolve correctly yet. That's what the reverse proxy is for.
+the shell app won't resolve correctly yet. That's what the reverse proxy is for.
 
 ---
 
 ## Reverse Proxy (make cross-zone links actually work)
 
-The problem: three apps on three different ports means a link to `/merchant` from
-`localhost:3000` just hits the consumer server, which doesn't know about `/merchant`.
+The problem: five apps on five different ports means a link to `/merchant` from
+`localhost:3000` just hits the shell server, which doesn't know about `/merchant`.
 
-The fix: put an nginx reverse proxy in front of all three. Everything comes through
+The fix: put an nginx reverse proxy in front of all five. Everything comes through
 port 80 and nginx decides where each request goes based on its path.
 
 Start your apps like usual, then in a second terminal:
@@ -68,8 +70,10 @@ docker compose -f docker-compose.dev.yml up
 Now open `http://localhost` instead of the individual ports. Nginx routes like this:
 
 - `/merchant/*` goes to the merchant app.
-- `/backoffice/*` goes to the back office app.
-- Everything else goes to the consumer app.
+- `/admin/*` goes to the admin app.
+- `/consumer/*` goes to the consumer app.
+- `/account/*` goes to the account app.
+- Everything else goes to the shell app.
 
 All cross-zone links, cookies, and auth work naturally because everything shares one
 origin. Only nginx runs inside Docker.
@@ -87,10 +91,10 @@ bun dev
 Filter to a single app or package:
 
 ```bash
-bun dev --filter=spotea-merchant
-bun lint --filter=spotea-consumer
-bun check-types --filter=spotea-backoffice
-bun run build --filter=spotea-merchant
+bun dev --filter=merchant
+bun lint --filter=consumer
+bun check-types --filter=admin
+bun run build --filter=account
 ```
 
 Lint, type-check, and format across the whole repo:
@@ -104,7 +108,7 @@ bun format
 Add a dependency to a specific app:
 
 ```bash
-bun add zustand --filter=spotea-consumer
+bun add zustand --filter=consumer
 bun add -d vitest --filter=@repo/ui
 ```
 
@@ -120,13 +124,15 @@ All three must pass with zero errors.
 
 ## Project Layout
 
-Three apps, three shared packages, and Docker plumbing.
+Five apps, three shared packages, and Docker plumbing.
 
 ```
 apps/
-  spotea-consumer/     #Customer-facing site, no basePath (root /)
-  spotea-merchant/     #Cafe owner dashboard, basePath /merchant
-  spotea-backoffice/   #Platform administration, basePath /backoffice
+  shell/              #Landing page & public routing, no basePath (root /)
+  merchant/           #Cafe owner dashboard, basePath /merchant
+  admin/              #Platform administration, basePath /admin
+  consumer/           #Customer-facing cafe discovery, basePath /consumer
+  account/            #User profile & settings, basePath /account
 
 packages/
   ui/                  #@repo/ui — shared React components (Button, Card, etc.)
@@ -158,7 +164,7 @@ tokens server-side. `NEXT_PUBLIC_APP_URL` should be `http://localhost` for devel
 
 ## Production (Docker)
 
-All-in-Docker stack with nginx and three app containers:
+All-in-Docker stack with nginx and five app containers:
 
 ```bash
 docker compose up --build
@@ -171,7 +177,7 @@ the subset of `node_modules` needed at runtime, no source code or dev dependenci
 Build a single image if you prefer:
 
 ```bash
-docker build -f apps/spotea-consumer/Dockerfile -t spotea-consumer .
+docker build -f apps/consumer/Dockerfile -t consumer .
 ```
 
 ---
@@ -183,15 +189,16 @@ A few things worth knowing before you write code in this repo:
 - **`middleware.ts` is gone in Next.js 16.** Every app uses `proxy.ts` instead.
 
 - **Cross-zone navigation must use `<a>` tags or `window.location.href`, not Next.js
-  `<Link>` or `router.push()`.** Apps with a basePath (merchant, backoffice) will
-  prepend their basePath to every `<Link>` href and every `router.push()` call. So
-  `<Link href="/backoffice">` in the merchant app becomes `/merchant/backoffice` —
-  wrong zone. The same happens with `useRouter().push("/backoffice")`.
+  `<Link>` or `router.push()`.** Apps with a basePath (merchant, admin, consumer,
+  account) will prepend their basePath to every `<Link>` href and every
+  `router.push()` call. So `<Link href="/admin">` in the merchant app becomes
+  `/merchant/admin` — wrong zone. The same happens with
+  `useRouter().push("/admin")`.
 
   What works instead:
 
-  - `<a href="/backoffice">` — plain anchor, no Next.js logic.
-  - `window.location.href = "/backoffice"` — works inside a button or any event handler.
+  - `<a href="/admin">` — plain anchor, no Next.js logic.
+  - `window.location.href = "/admin"` — works inside a button or any event handler.
   - A `<button>` with an `onClick` that sets `window.location.href`.
 
   Why does it use a full page load instead of SPA navigation? Because cross-zone means
