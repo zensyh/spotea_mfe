@@ -6,39 +6,63 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
+      shell:
+        condition: service_started
       consumer:
         condition: service_started
       merchant:
         condition: service_started
-      backoffice:
+      admin:
+        condition: service_started
+      account:
         condition: service_started
 
-  consumer:
+  shell:
     build:
       context: .
-      dockerfile: apps/spotea-consumer/Dockerfile
+      dockerfile: apps/shell/Dockerfile
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
     expose:
       - "3000"
 
+  consumer:
+    build:
+      context: .
+      dockerfile: apps/consumer/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=http://localhost
+    expose:
+      - "3003"
+
   merchant:
     build:
       context: .
-      dockerfile: apps/spotea-merchant/Dockerfile
+      dockerfile: apps/merchant/Dockerfile
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
     expose:
       - "3001"
 
-  backoffice:
+  admin:
     build:
       context: .
-      dockerfile: apps/spotea-backoffice/Dockerfile
+      dockerfile: apps/admin/Dockerfile
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
     expose:
       - "3002"
+
+  account:
+    build:
+      context: .
+      dockerfile: apps/account/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=http://localhost
+    expose:
+      - "3004"
