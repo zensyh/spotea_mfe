@@ -51,10 +51,10 @@ docker compose -f docker-compose.dev.yml up
 
 Buka `http://localhost` (bukan port masing-masing). Routing:
 
-- `/app1/*` -> merchant
-- `/app2/*` -> admin
-- `/app3/*` -> consumer
-- `/app4/*` -> account
+- `/app1/*` -> app1
+- `/app2/*` -> app2
+- `/app3/*` -> app3
+- `/app4/*` -> app4
 - sisanya -> shell
 
 Cross-zone links, cookies, dan auth jalan natural karena satu origin.
@@ -65,11 +65,11 @@ Cross-zone links, cookies, dan auth jalan natural karena satu origin.
 
 ```bash
 bun dev                          # jalankan semua secara parallel
-bun dev --filter=merchant        # filter satu app/package
+bun dev --filter=app1        # filter satu app/package
 bun lint                         # lint seluruh repo
 bun check-types                  # type-check
 bun format                       # format
-bun add zustand --filter=consumer   # tambah dependency ke app tertentu
+bun add zustand --filter=app2   # tambah dependency ke app tertentu
 ```
 
 **Sebelum push**, jalankan verification pipeline lengkap:
@@ -103,7 +103,7 @@ docker compose up --build
 Tiap app di-build lewat multi-stage Dockerfile (`deps -> builder -> runner`) dengan Next.js `output: "standalone"`. Build satu image saja:
 
 ```bash
-docker build -f apps/consumer/Dockerfile -t consumer .
+docker build -f apps/shell/Dockerfile -t shell .
 ```
 
 ---
