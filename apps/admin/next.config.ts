@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   basePath: '/admin',
   assetPrefix: '/admin',
-  transpilePackages: ['@repo/ui'],
+  transpilePackages: ['@repo/ui', '@spotea/auth'],
   reactCompiler: true,
 };
 
