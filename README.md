@@ -115,5 +115,8 @@ docker build -f apps/consumer/Dockerfile -t consumer .
 - **Dependencies flow inward.** Pages -> features -> shared code -> packages. Tidak sebaliknya.
 - **Semua HTTP lewat BFF.** Client memanggil fetcher -> `/api/*` route handler -> attach JWT -> backend. Tidak ada fetch langsung dari browser ke backend.
 
+---
 
--zein irfansyah
+```bash
+initiate by: zein irfansyah
+```
