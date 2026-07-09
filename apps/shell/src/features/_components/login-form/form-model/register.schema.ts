@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { RegisterPayload } from '@spotea/auth';
+import type { RegisterPayload } from '@repo/auth';
 
 export const registerSchema = z.object({
   fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),

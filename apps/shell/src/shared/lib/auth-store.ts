@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { User } from '@spotea/auth';
+import type { User } from '@repo/auth';
 import { fetcher, ApiError } from './fetcher';
 
 interface AuthState {

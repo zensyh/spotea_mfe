@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSessionCookie, type RegisterPayload } from '@spotea/auth';
+import { createSessionCookie, type RegisterPayload } from '@repo/auth';
 
 const registerSchema = z.object({
   fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { LoginPayload } from '@spotea/auth';
+import type { LoginPayload } from '@repo/auth';
 
 export const loginSchema = z.object({
   username: z.string().min(3, 'Username minimal 3 karakter'),

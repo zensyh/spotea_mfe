@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { deleteSessionCookie } from '@spotea/auth';
+import { deleteSessionCookie } from '@repo/auth';
 
 export async function POST() {
   const cookie = deleteSessionCookie();

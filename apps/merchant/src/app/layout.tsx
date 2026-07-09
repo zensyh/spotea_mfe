@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { redirect } from 'next/navigation';
-import { verifySession } from '@spotea/auth';
+import { verifySession } from '@repo/auth';
 import './globals.css';
 
 const geistSans = Geist({

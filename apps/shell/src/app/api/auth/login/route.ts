@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSessionCookie, type LoginPayload } from '@spotea/auth';
+import { createSessionCookie, type LoginPayload } from '@repo/auth';
 
 const loginSchema = z.object({
   username: z.string().min(3, 'Username minimal 3 karakter'),

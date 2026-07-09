@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifySession } from '@spotea/auth';
+import { verifySession } from '@repo/auth';
 
 export async function GET() {
   const session = await verifySession();

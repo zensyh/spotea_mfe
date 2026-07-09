@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { COOKIE_NAME } from '@spotea/auth';
+import { COOKIE_NAME } from '@repo/auth';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost';
 

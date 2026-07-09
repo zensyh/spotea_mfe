@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { User } from '@spotea/auth';
+import type { User } from '@repo/auth';
 import { fetcher, ApiError } from '@/shared/lib/fetcher';
 import type { LoginFormValues } from '../form-model/login.schema';
 

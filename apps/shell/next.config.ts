@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@repo/ui', '@spotea/auth'],
+  transpilePackages: ['@repo/ui', '@repo/auth'],
   reactCompiler: true,
 };
 
