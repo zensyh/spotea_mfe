@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { createSessionCookie, type LoginPayload } from '@repo/auth';
-
-const loginSchema = z.object({
-  username: z.string().min(3, 'Username minimal 3 karakter'),
-  password: z.string().min(8, 'Password minimal 8 karakter'),
-}) satisfies z.ZodType<LoginPayload>;
+import { createSessionCookie } from '@repo/auth';
+import { loginSchema } from '@/features/_components/login-form/form-model/login.schema';
 
 export async function POST(request: Request) {
   try {

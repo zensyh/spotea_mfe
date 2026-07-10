@@ -21,6 +21,7 @@ export function useRegister(): UseRegisterReturn {
         method: 'POST',
         body: payload,
       });
+      console.log('log', data);
       return data.user;
     } catch (err) {
       const message =

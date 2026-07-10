@@ -1,9 +1,8 @@
 export interface User {
   id: string;
-  fullName: string;
+  name: string;
   username: string;
   email?: string;
-  phone?: string;
   role: 'customer' | 'merchant' | 'admin';
 }
 
@@ -18,11 +17,11 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  fullName: string;
+  name: string;
   username: string;
   password: string;
+  confirmPassword: string;
   email?: string;
-  phone?: string;
 }
 
 export interface AuthResponse {

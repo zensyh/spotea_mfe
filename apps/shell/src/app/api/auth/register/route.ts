@@ -1,22 +1,5 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { createSessionCookie, type RegisterPayload } from '@repo/auth';
-
-const registerSchema = z.object({
-  fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
-  username: z
-    .string()
-    .min(3, 'Username minimal 3 karakter')
-    .max(20, 'Username maksimal 20 karakter')
-    .regex(/^[a-z0-9_]+$/, 'Hanya huruf kecil, angka, dan underscore'),
-  password: z.string().min(8, 'Password minimal 8 karakter'),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
-  phone: z
-    .string()
-    .min(10, 'Nomor telepon minimal 10 digit')
-    .optional()
-    .or(z.literal('')),
-}) satisfies z.ZodType<RegisterPayload>;
+import { registerSchema } from '@/features/auth/register/form-model/register.schema';
 
 export async function POST(request: Request) {
   try {
@@ -42,12 +25,12 @@ export async function POST(request: Request) {
     }
 
     const payload: Record<string, unknown> = {
-      fullName: parsed.data.fullName,
+      name: parsed.data.name,
       username: parsed.data.username,
       password: parsed.data.password,
+      confirmPassword: parsed.data.confirmPassword,
     };
     if (parsed.data.email) payload.email = parsed.data.email;
-    if (parsed.data.phone) payload.phone = parsed.data.phone;
 
     const res = await fetch(`${backendUrl}/auth/register`, {
       method: 'POST',
@@ -64,13 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { user, token } = data as { user: unknown; token: string };
-    const cookie = createSessionCookie(token);
-
-    const response = NextResponse.json({ user }, { status: 201 });
-    response.cookies.set(cookie);
-
-    return response;
+    return NextResponse.json({ data }, { status: 201 });
   } catch {
     return NextResponse.json(
       { message: 'Terjadi kesalahan internal' },

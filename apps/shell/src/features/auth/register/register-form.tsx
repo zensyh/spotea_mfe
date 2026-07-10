@@ -21,10 +21,11 @@ import {
   CardTitle,
 } from '@repo/ui/ui/card';
 import {
-  registerSchema,
   type RegisterFormValues,
+  registerSchema,
 } from './form-model/register.schema';
 import { useRegister } from './hooks/use-register';
+import { registerDefaultValue } from '@/features/auth/register/form-model/default-value';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -32,13 +33,7 @@ export function RegisterForm() {
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      fullName: '',
-      username: '',
-      password: '',
-      email: '',
-      phone: '',
-    },
+    defaultValues: registerDefaultValue,
   });
 
   async function onSubmit(values: RegisterFormValues) {
@@ -52,16 +47,14 @@ export function RegisterForm() {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Daftar</CardTitle>
-        <CardDescription>
-          Buat akun Spotea baru
-        </CardDescription>
+        <CardDescription>Buat akun Spotea baru</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="fullName"
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nama Lengkap</FormLabel>
@@ -80,19 +73,6 @@ export function RegisterForm() {
                   <FormLabel>Username</FormLabel>
                   <FormControl>
                     <Input placeholder="johndoe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nomor Telepon (opsional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="08123456789" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,6 +105,23 @@ export function RegisterForm() {
                     <Input
                       type="password"
                       placeholder="Minimal 8 karakter"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Konfirmasi Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Masukkan ulang password"
                       {...field}
                     />
                   </FormControl>
