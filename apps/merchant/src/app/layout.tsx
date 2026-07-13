@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { redirect } from 'next/navigation';
+import { verifySession } from '@repo/auth';
 import './globals.css';
 
 const geistSans = Geist({
@@ -12,17 +14,29 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost';
+
 export const metadata: Metadata = {
   title: 'Spotea Merchant — Kelola Kafe Kamu',
   description:
     'Dashboard untuk pemilik kafe: atur profil, menu, jam buka, dan pantau reservasi pelanggan.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await verifySession();
+
+  if (!session) {
+    redirect(`${APP_URL}/login`);
+  }
+
+  if (session.user.role !== 'merchant') {
+    redirect(APP_URL);
+  }
+
   return (
     <html
       lang="en"
