@@ -17,11 +17,11 @@ export function useLogin(): UseLoginReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetcher<{ user: User }>('/api/auth/login', {
+      const response = await fetcher<{ user: User }>('/api/auth/login', {
         method: 'POST',
         body: payload,
       });
-      return data.user;
+      return response.user;
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : 'Terjadi kesalahan';

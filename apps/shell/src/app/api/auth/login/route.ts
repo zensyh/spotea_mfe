@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSessionCookie } from '@repo/auth';
-import { loginSchema } from '@/features/_components/login-form/form-model/login.schema';
+import { loginSchema } from '@/features/auth/login/components/form/form-model/login.schema';
+import { formatZodError } from '@/shared/lib/format-zod-validation';
 
 export async function POST(request: Request) {
   try {
@@ -9,10 +10,7 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        {
-          message: 'Validasi gagal',
-          errors: parsed.error.flatten().fieldErrors,
-        },
+        { message: formatZodError(parsed.error) },
         { status: 400 },
       );
     }
