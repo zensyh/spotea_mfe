@@ -1,10 +1,5 @@
 export { verifySession, getSession, requireSession } from './session';
-export {
-  createSessionCookie,
-  deleteSessionCookie,
-  COOKIE_NAME,
-  type SessionCookie,
-} from './cookie';
+export { COOKIE_NAME } from './cookie';
 export type {
   User,
   Session,

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { deleteSessionCookie } from '@repo/auth';
 
 export async function POST() {
-  const cookie = deleteSessionCookie();
   const response = NextResponse.json({ success: true }, { status: 200 });
-  response.cookies.set(cookie);
+  response.cookies.delete('access_token');
+  response.cookies.delete('refresh_token');
   return response;
 }
