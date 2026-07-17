@@ -3,7 +3,7 @@ export interface User {
   name: string;
   username: string;
   email?: string;
-  role: 'customer' | 'merchant' | 'admin';
+  role: 'CUSTOMER' | 'MERCHANT' | 'ADMIN';
 }
 
 export interface Session {
