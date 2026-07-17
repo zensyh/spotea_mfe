@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createSessionCookie } from '@repo/auth';
 import { loginSchema } from '@/features/auth/login/components/form/form-model/login.schema';
 import { formatZodError } from '@/shared/lib/format-zod-validation';
 
@@ -18,7 +17,7 @@ export async function POST(request: Request) {
     const backendUrl = process.env.BACKEND_API_URL;
     if (!backendUrl) {
       return NextResponse.json(
-        { message: 'Server tidak dikonfigurasi dengan benar' },
+        { message: 'Internal server error.' },
         { status: 500 },
       );
     }
@@ -33,21 +32,36 @@ export async function POST(request: Request) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { message: data.message || 'Login gagal' },
+        { message: data.message || 'Login failed.' },
         { status: res.status },
       );
     }
 
-    const { user, token } = data as { user: unknown; token: string };
-    const cookie = createSessionCookie(token);
+    const accessToken = res.headers.get('x-access-token');
+    const backendCookies = res.headers.get('set-cookie');
 
-    const response = NextResponse.json({ user }, { status: 200 });
-    response.cookies.set(cookie);
+    if (!accessToken || !backendCookies) {
+      return NextResponse.json(
+        { message: 'Internal server error.' },
+        { status: 500 },
+      );
+    }
 
-    return response;
+    const clientResponse = NextResponse.json(data, { status: 200 });
+
+    clientResponse.cookies.set('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 5 * 60,
+    });
+    clientResponse.headers.append('Set-Cookie', backendCookies);
+
+    return clientResponse;
   } catch {
     return NextResponse.json(
-      { message: 'Terjadi kesalahan internal' },
+      { message: 'Internal server error.' },
       { status: 500 },
     );
   }
