@@ -94,7 +94,6 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: REFRESH_TOKEN_EXPIRES_IN_SECONDS,
     });
 
     if (deviceCookieNeeded) {

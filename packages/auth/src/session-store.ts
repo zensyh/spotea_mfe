@@ -51,12 +51,19 @@ export async function getSessionData(
 export async function updateSession(
   sid: string,
   data: Partial<SessionData>,
+  ttlSeconds?: number,
 ): Promise<void> {
   const redis = getRedis();
   const existing = await getSessionData(sid);
   if (!existing) return;
   const updated = { ...existing, ...data };
-  await redisCall(redis, 'SET', sessionKey(sid), JSON.stringify(updated), 'KEEPTTL');
+  const args: string[] = ['SET', sessionKey(sid), JSON.stringify(updated)];
+  if (ttlSeconds !== undefined) {
+    args.push('EX', ttlSeconds.toString());
+  } else {
+    args.push('KEEPTTL');
+  }
+  await redisCall(redis, ...args);
 }
 
 export async function deleteSession(sid: string): Promise<string | null> {
