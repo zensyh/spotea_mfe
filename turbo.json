@@ -1,6 +1,13 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "stream",
+  "globalEnv": [
+    "NODE_ENV",
+    "REDIS_URL",
+    "BACKEND_API_URL",
+    "JWT_SECRET",
+    "NEXT_PUBLIC_APP_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
