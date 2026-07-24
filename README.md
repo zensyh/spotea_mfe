@@ -2,10 +2,6 @@
 
 **Microfrontend Multizones · Turborepo · Next.js 16 · Bun**
 
-Spotea is a coffeeshop finder platform where customers discover cafes, merchants manage
-their profiles, and admins run the platform. Five separate
-Next.js apps behind one domain, each owned by a different context.
-
 ---
 
 ## Prerequisites
@@ -256,47 +252,5 @@ A few things worth knowing before you write code in this repo:
 
 ---
 
-## Authentication Flow
 
-Auth uses an **opaque session** pattern with Redis:
-
-```
-Browser ──(sid cookie)──> Next.js BFF ──(Bearer access_token)──> REST API
-                                  │
-                              (Redis)
-                            session cache
-```
-
-### Login
-1. Browser `POST /api/auth/login` → BFF
-2. BFF forwards to backend with device headers (`x-forwarded-for`, `x-device-id`, `x-device-name`)
-3. Backend returns `{ access_token, refresh_token, user }`
-4. BFF generates `sid` (UUID), stores session in Redis (`session:<sid>`) with 15min TTL
-5. BFF adds sid to `user_sessions:<userId>` set
-6. BFF sets `sid` cookie (`HttpOnly`, `Secure`, `SameSite=Strict`)
-7. Browser is redirected to role-based home (`/consumer`, `/merchant`, `/admin`)
-
-### Authenticated Requests
-1. Zone app's `proxy.ts` checks `sid` cookie exists (fast pass-through)
-2. Zone app's `layout.tsx` calls `verifySession()` → reads `sid` cookie → `GET session:<sid>` from Redis → returns session data
-3. Protected backend calls use `authenticatedFetch()` helper which attaches `Authorization: Bearer <accessToken>` from Redis
-
-### Token Refresh (Race Condition Guard)
-When backend returns 401 (expired access token):
-1. BFF acquires Redis distributed lock: `SET lock:refresh:<sid> NX EX 5`
-2. **Lock acquired** → POST `/auth/refresh` → update Redis with new tokens (`KEEPTTL`) → release lock → retry
-3. **Lock not acquired** → poll `GET session:<sid>` until token changes (up to 3s) → retry
-
-### Logout
-1. Browser `POST /api/auth/logout` → BFF
-2. BFF reads `sid` cookie, gets session from Redis
-3. BFF calls backend `POST /auth/revoke` with refresh token
-4. BFF deletes `session:<sid>` and `SREM user_sessions:<userId>` in Redis
-5. BFF clears `sid` cookie
-
-### Redis Key Schema
-| Key | Type | Value | TTL |
-|---|---|---|---|
-| `session:<sid>` | String | `{ accessToken, refreshToken, userId, role, username, name, createdAt }` JSON | 15 min |
-| `user_sessions:<userId>` | Set | Set of `sid` strings | No expiry (managed manually) |
-| `lock:refresh:<sid>` | String | Timestamp | 5 sec |
+-zeinirfansyah
