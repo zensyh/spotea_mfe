@@ -1,21 +1,14 @@
-# Spotea — Cafe Finder Platform
+# Spotea — Microfrontend Multizones
 
-**Microfrontend Multizones · Turborepo · Next.js 16 · Bun**
+**Turborepo · Next.js 16 · Bun**
 
 ---
 
 ## Prerequisites
 
-- **Bun** (1.3.14 or newer),
-- **Node.js** (18 or above),
-- **Docker Desktop**
-
-```
-Docker is optional — the apps still
-run fine without it, but links between zones won't work until you add the proxy.
-```
-
-Check them before starting:
+- Bun 1.3.14+
+- Node.js 18+
+- Docker Desktop
 
 ```bash
 bun --version
@@ -23,193 +16,139 @@ node --version
 docker --version
 ```
 
+Docker is optional. Apps run fine without it, tapi cross-zone routing via reverse proxy gak akan jalan.
+
 ---
 
-## Getting Started
-
-Clone the repo, install everything, copy the env template, and go.
+## Quick Start
 
 ```bash
-git clone <repo-url> spotea-mfe && cd spotea-mfe
 bun install
 cp .env.example .env
 bun dev
 ```
 
-That gives you five dev servers:
+Lima dev server muncul:
 
-- Shell at `http://localhost:3000` — landing page and public routing (no basePath).
-- Merchant at `http://localhost:3001/merchant` — cafe owner dashboard.
-- Admin at `http://localhost:3002/admin` — platform administration.
-- Consumer at `http://localhost:3003/consumer` — customer-facing cafe discovery.
-- Account at `http://localhost:3004/account` — user profile and settings.
+- shell — `http://localhost:3000`, no basePath, root /
+- merchant — `http://localhost:3001/merchant`, basePath /merchant
+- admin — `http://localhost:3002/admin`, basePath /admin
+- consumer — `http://localhost:3003/consumer`, basePath /consumer
+- account — `http://localhost:3004/account`, basePath /account
 
-Since each app runs on its own port, cross-zone links like `/merchant` clicked from
-the shell app won't resolve correctly yet. That's what the reverse proxy is for.
+Masing-masing jalan di port sendiri. Link cross-zone kayak `/merchant` dari shell gak akan resolve tanpa reverse proxy.
 
 ---
 
-## Reverse Proxy (make cross-zone links actually work)
+## Reverse Proxy
 
-The problem: five apps on five different ports means a link to `/merchant` from
-`localhost:3000` just hits the shell server, which doesn't know about `/merchant`.
-
-The fix: put an nginx reverse proxy in front of all five. Everything comes through
-port 80 and nginx decides where each request goes based on its path.
-
-Start your apps like usual, then in a second terminal:
+Semua app di port beda -> link cross-zone broken. Solusi: nginx reverse proxy di port 80 routing based on path.
 
 ```bash
 docker compose -f docker-compose.dev.yml up
 ```
 
-Now open `http://localhost` instead of the individual ports. Nginx routes like this:
+Buka `http://localhost` (instead of individual ports). Nginx routing:
 
-- `/merchant/*` goes to the merchant app.
-- `/admin/*` goes to the admin app.
-- `/consumer/*` goes to the consumer app.
-- `/account/*` goes to the account app.
-- Everything else goes to the shell app.
+- `/merchant/*` -> merchant app
+- `/admin/*` -> admin app
+- `/consumer/*` -> consumer app
+- `/account/*` -> account app
+- sisanya -> shell app
 
-All cross-zone links, cookies, and auth work naturally because everything shares one
-origin. Only nginx runs inside Docker.
+Semua share satu origin. Hanya nginx yang jalan di Docker.
 
-## Redis (Session Store)
+---
 
-The auth system uses **Redis** as a server-side session cache. All tokens live in Redis,
-not in browser cookies — the browser only holds an opaque session ID (`sid` cookie).
+## Redis — Session Store
 
-### Start Redis
+Auth pake Redis sebagai server-side session cache. Browser cuma pegang `sid` cookie (opaque session ID), token di Redis.
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d redis
 ```
 
-Available at `localhost:6379` (mapped to host for dev).
+Available at `localhost:6379` (mapped to host).
 
-### RedisInsight (GUI)
-
-A Redis GUI is available at `http://localhost:5540`:
+RedisInsight GUI di `http://localhost:5540`:
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d redis redisinsight
 ```
 
-Then open `http://localhost:5540` and connect:
-| Field | Value |
-|---|---|
-| Host | `redis` |
-| Port | `6379` |
-| Name | `Spotea Local` |
-
-The `redis` hostname resolves via Docker's internal DNS — both containers are on
-the same network. No password required.
+Konek RedisInsight: Host `redis`, Port `6379`, Name `Spotea Local`. Hostname resolve via Docker internal DNS, no auth.
 
 ---
 
 ## Day-to-Day Commands
 
-Run everything in parallel:
-
 ```bash
-bun dev
-```
-
-Filter to a single app or package:
-
-```bash
-bun dev --filter=merchant
+bun dev                          # all apps parallel
+bun dev --filter=merchant        # single app
 bun lint --filter=consumer
 bun check-types --filter=admin
 bun run build --filter=account
-```
-
-Lint, type-check, and format across the whole repo:
-
-```bash
-bun lint
+bun lint                         # whole repo
 bun check-types
 bun format
-```
-
-Add a dependency to a specific app:
-
-```bash
 bun add zustand --filter=consumer
 bun add -d vitest --filter=@repo/ui
 ```
 
-**Before pushing**, always run the full verification pipeline:
+Before push:
 
 ```bash
 bun lint && bun check-types && bun run build
 ```
 
-All three must pass with zero errors.
-
----
+Zero errors required.
 
 ---
 
 ## Project Layout
 
-Five apps, three shared packages, and Docker plumbing.
-
 ```
 apps/
-  shell/              #Landing page & public routing, no basePath (root /)
-  merchant/           #Cafe owner dashboard, basePath /merchant
-  admin/              #Platform administration, basePath /admin
-  consumer/           #Customer-facing cafe discovery, basePath /consumer
-  account/            #User profile & settings, basePath /account
+  shell/             # no basePath, root /
+  merchant/          # basePath /merchant
+  admin/             # basePath /admin
+  consumer/          # basePath /consumer
+  account/           # basePath /account
 
 packages/
-  ui/                  #@repo/ui — shared React components (Button, Card, etc.)
-  eslint-config/       #@repo/eslint-config — ESLint 9 flat config presets
-  typescript-config/   #@repo/typescript-config — shared tsconfig presets
+  ui/                # @repo/ui — shared components
+  eslint-config/     # @repo/eslint-config
+  typescript-config/ # @repo/typescript-config
 
-nginx/                 #Reverse proxy configs (dev and production)
+nginx/               # reverse proxy configs
 ```
 
-Each app is a fully independent Next.js project. They share code through `packages/`,
-not by importing across app boundaries. The reverse proxy (nginx or Vercel Multi-Zones
-in production) stitches them back together under one domain.
+Setiap app adalah Next.js project independen. Code sharing lewat `packages/`, bukan cross-app import. Reverse proxy (nginx lokal / Vercel Multi-Zones di production) nyambungin semua di bawah satu domain.
 
 ---
 
 ## Environment Variables
 
-Copy the template and fill in your values:
+`cp .env.example .env`
 
-```bash
-cp .env.example .env
-```
+- `BACKEND_API_URL` — REST API base (e.g. `http://localhost:3033/api/v1`)
+- `JWT_SECRET` — Legacy token secret, backward compat
+- `NEXT_PUBLIC_APP_URL` — Public URL (`http://localhost` with nginx)
+- `REDIS_URL` — Redis connection (`redis://localhost:6379`)
 
-| Variable | Description |
-|---|---|
-| `BACKEND_API_URL` | REST API base URL (e.g. `http://localhost:3033/api/v1`) |
-| `JWT_SECRET` | Secret for token verification (legacy, kept for backward compat) |
-| `NEXT_PUBLIC_APP_URL` | Public URL (`http://localhost` with nginx, or production domain) |
-| `REDIS_URL` | Redis connection string (e.g. `redis://localhost:6379`) |
-
-All five apps and the `@repo/auth` package need `REDIS_URL` to read sessions.
-The shell app also writes to Redis (login, logout, token refresh).
+Semua app + `@repo/auth` butuh `REDIS_URL` buat read sessions. Shell juga write ke Redis (login/logout/refresh).
 
 ---
 
 ## Production (Docker)
 
-All-in-Docker stack with nginx and five app containers:
-
 ```bash
 docker compose up --build
 ```
 
-Each app gets built through a multi-stage Dockerfile (`deps -> builder -> runner`) using
-Next.js `output: "standalone"` to keep the runtime image small — only `server.js` and
-the subset of `node_modules` needed at runtime, no source code or dev dependencies.
+Multi-stage Dockerfile (`deps -> builder -> runner`), Next.js `output: "standalone"`. Runtime cuma `server.js` + subset `node_modules`.
 
-Build a single image if you prefer:
+Build single image:
 
 ```bash
 docker build -f apps/consumer/Dockerfile -t consumer .
@@ -219,38 +158,16 @@ docker build -f apps/consumer/Dockerfile -t consumer .
 
 ## Architecture Notes
 
-A few things worth knowing before you write code in this repo:
+1. **`middleware.ts` di Next.js 16 sudah dihapus.** Setiap app pake `proxy.ts`.
 
-- **`middleware.ts` is gone in Next.js 16.** Every app uses `proxy.ts` instead.
+2. **Cross-zone navigation: pake `<a>` atau `window.location.href`, jangan pake Next.js `<Link>` atau `router.push()`.** Apps dengan basePath otomatis prepend basePath-nya ke setiap href, jadi `<Link href="/admin">` dari merchant jadi `/merchant/admin` — wrong zone. Plain anchor atau `window.location.href` bypass Next.js router logic. Cross-zone berarti ninggalin satu Next.js app dan masuk ke app lain — bundle beda, React tree beda, port beda di dev. Full page load adalah behavior yang benar.
 
-- **Cross-zone navigation must use `<a>` tags or `window.location.href`, not Next.js
-  `<Link>` or `router.push()`.** Apps with a basePath (merchant, admin, consumer,
-  account) will prepend their basePath to every `<Link>` href and every
-  `router.push()` call. So `<Link href="/admin">` in the merchant app becomes
-  `/merchant/admin` — wrong zone. The same happens with
-  `useRouter().push("/admin")`.
+3. **Dependency flow inward.** Pages -> features -> shared code -> packages. Never reverse.
 
-  What works instead:
-
-  - `<a href="/admin">` — plain anchor, no Next.js logic.
-  - `window.location.href = "/admin"` — works inside a button or any event handler.
-  - A `<button>` with an `onClick` that sets `window.location.href`.
-
-  Why does it use a full page load instead of SPA navigation? Because cross-zone means
-  you are leaving one Next.js app and entering another — different bundle, different
-  React tree, different port in dev. There is no shared runtime between zones
-  (this is not module federation). A full navigation request is exactly what you want:
-  the browser hits the reverse proxy, nginx routes to the correct app, and that app
-  renders its page from scratch.
-
-- **Dependencies flow inward.** App pages import from features, features import from
-  shared code, shared code imports from packages. Never the other direction.
-
-- **All HTTP goes through BFF.** Client code calls a fetcher, which hits a `/api/*`
-  route handler, which attaches the JWT and calls the real backend. No fetch directly
-  from browser to backend.
+4. **Semua HTTP lewat BFF.** Client pake fetcher -> hits `/api/*` route handler -> attach JWT -> call real backend. No direct fetch from browser to backend.
 
 ---
 
+## Authors
 
--zeinirfansyah
+- zeinirfansyah
