@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { loginSchema } from '@/features/auth/login/components/form/form-model/login.schema';
 import { formatZodError } from '@/shared/lib/format-zod-validation';
+import {
+  createSession,
+  DEVICE_ID_COOKIE,
+  REFRESH_TOKEN_EXPIRES_IN_SECONDS,
+} from '@repo/auth';
+import { buildDeviceHeaders } from '@/shared/lib/bff-auth';
 
 export async function POST(request: Request) {
   try {
@@ -22,9 +28,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const cookieHeader = request.headers.get('cookie') || '';
+    const existingDeviceId = extractCookie(cookieHeader, DEVICE_ID_COOKIE);
+    const deviceId = existingDeviceId || crypto.randomUUID();
+    const deviceCookieNeeded = !existingDeviceId;
+
+    const headers = buildDeviceHeaders(request, deviceId);
+
     const res = await fetch(`${backendUrl}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(parsed.data),
     });
 
@@ -37,26 +50,62 @@ export async function POST(request: Request) {
       );
     }
 
-    const accessToken = res.headers.get('x-access-token');
-    const backendCookies = res.headers.get('set-cookie');
-
-    if (!accessToken || !backendCookies) {
+    const loginData = data.data;
+    if (!loginData) {
       return NextResponse.json(
         { message: 'Internal server error.' },
         { status: 500 },
       );
     }
 
-    const clientResponse = NextResponse.json(data, { status: 200 });
+    const sid = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const userName =
+      loginData.user.name || loginData.user.username || 'User';
 
-    clientResponse.cookies.set('access_token', accessToken, {
+    await createSession(
+      sid,
+      {
+        accessToken: loginData.access_token,
+        refreshToken: loginData.refresh_token,
+        userId: loginData.user.id,
+        role: loginData.user.role,
+        username: loginData.user.username,
+        name: userName,
+        createdAt: now,
+      },
+      REFRESH_TOKEN_EXPIRES_IN_SECONDS,
+    );
+
+    const clientResponse = NextResponse.json(
+      {
+        user: {
+          id: loginData.user.id,
+          name: userName,
+          username: loginData.user.username,
+          role: loginData.user.role,
+        },
+      },
+      { status: 200 },
+    );
+
+    clientResponse.cookies.set('sid', sid, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
-      maxAge: 5 * 60,
+      maxAge: REFRESH_TOKEN_EXPIRES_IN_SECONDS,
     });
-    clientResponse.headers.append('Set-Cookie', backendCookies);
+
+    if (deviceCookieNeeded) {
+      clientResponse.cookies.set(DEVICE_ID_COOKIE, deviceId, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 365 * 24 * 60 * 60,
+      });
+    }
 
     return clientResponse;
   } catch {
@@ -65,4 +114,10 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+function extractCookie(cookieHeader: string, name: string): string | null {
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  if (!match) return null;
+  return match[1] ?? null;
 }

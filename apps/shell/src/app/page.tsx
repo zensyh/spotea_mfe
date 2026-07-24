@@ -16,6 +16,14 @@ export default function Home() {
             </a>
           ))}
         </div>
+        <form action="/api/auth/logout" method="POST">
+          <button
+            type="submit"
+            className="w-full rounded-xs border border-red-300 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-50"
+          >
+            Logout
+          </button>
+        </form>
       </main>
     </div>
   );

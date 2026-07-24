@@ -1,24 +1,32 @@
-export default function Home() {
+import { verifySession } from '@repo/auth';
+
+export default async function Home() {
+  const session = await verifySession();
+
+  if (!session) {
+    return (
+      <div>
+        <p>Not authenticated</p>
+        <a href="/login">Go to Login</a>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-full flex-col items-center justify-center">
-      <main className="flex w-full max-w-2xl flex-col items-center gap-8 rounded-2xl bg-white px-8 py-12 ">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-900">
-            Account Dashboard
-          </h1>
-        </div>
-        <div className="flex flex-col gap-2 w-full">
-          {['/', '/merchant', '/admin', '/consumer'].map((path) => (
-            <a
-              key={path}
-              href={path}
-              className="text-center rounded-lg border border-stone-200 px-4 py-3 text-sm font-medium text-stone-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50"
-            >
-              {path}
-            </a>
-          ))}
-        </div>
-      </main>
+    <div>
+      <h1>Account Overview</h1>
+      <h2>Your Profile (from Redis session)</h2>
+      <table border={1}>
+        <tbody>
+          <tr><td>ID</td><td>{session.user.id}</td></tr>
+          <tr><td>Name</td><td>{session.user.name}</td></tr>
+          <tr><td>Username</td><td>{session.user.username}</td></tr>
+          <tr><td>Email</td><td>{session.user.email ?? '(not set)'}</td></tr>
+          <tr><td>Role</td><td>{session.user.role}</td></tr>
+          <tr><td>Token (sid)</td><td>{session.token}</td></tr>
+        </tbody>
+      </table>
+      <a href="/">Back to Home</a>
     </div>
   );
 }

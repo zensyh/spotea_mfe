@@ -1,25 +1,26 @@
-import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { COOKIE_NAME } from './cookie';
+import { getSessionData } from './session-store';
 import type { Session } from './types';
-
-function getSecret() {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET environment variable tidak diset');
-  }
-  return new TextEncoder().encode(secret);
-}
 
 export async function verifySession(): Promise<Session | null> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-    if (!token) return null;
+    const sid = cookieStore.get(COOKIE_NAME)?.value;
+    if (!sid) return null;
 
-    const secret = getSecret();
-    const { payload } = await jwtVerify<Session>(token, secret);
-    return payload;
+    const sessionData = await getSessionData(sid);
+    if (!sessionData) return null;
+
+    return {
+      user: {
+        id: sessionData.userId,
+        name: sessionData.name,
+        username: sessionData.username,
+        role: sessionData.role,
+      },
+      token: sid,
+    };
   } catch {
     return null;
   }
