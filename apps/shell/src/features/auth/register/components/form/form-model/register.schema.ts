@@ -39,12 +39,10 @@ export const registerSchema = z
     confirmPassword: z.string().nonoptional(),
 
     email: z
-      .string()
+      .email('Invalid email address')
+      .nonempty('Email is required')
       .trim()
-      .toLowerCase()
-      .email('Invalid email address.')
-      .optional()
-      .or(z.literal('')),
+      .toLowerCase(),
 
     name: z
       .string()

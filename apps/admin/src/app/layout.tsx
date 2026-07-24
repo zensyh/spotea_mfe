@@ -33,7 +33,7 @@ export default async function RootLayout({
     redirect(`${APP_URL}/login`);
   }
 
-  if (session.user.role !== 'admin') {
+  if (session.user.role !== 'ADMIN') {
     redirect(APP_URL);
   }
 

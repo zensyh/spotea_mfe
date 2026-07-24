@@ -119,7 +119,8 @@ export function RegisterForm() {
 
           <div className="space-y-2">
             <Label htmlFor="email" className={labelClass}>
-              Email <span className="text-muted-foreground/70">(optional)</span>
+              Email
+              {/*<span className="text-muted-foreground/70">(optional)</span>*/}
             </Label>
             <Input
               id="email"

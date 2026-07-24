@@ -44,7 +44,7 @@ const RegisterBanner = () => {
             className="pulse-dot inline-block size-2 rounded-full bg-primary-foreground"
             aria-hidden="true"
           />
-          Spotea · Welcome Buddy!
+          Spotea · Join the Spotea!
         </div>
         <div
           className="anim-reveal flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground"
@@ -55,27 +55,32 @@ const RegisterBanner = () => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-lg space-y-6">
+      <div className="relative z-10 max-w-2xl space-y-6 px-12">
         <h1
           className="anim-reveal font-sans font-bold leading-[1.05] tracking-[-0.02em] text-6xl"
           style={{ animationDelay: '80ms' }}
         >
-          Every great day starts with the right cafe.
+          Your next favorite spot is waiting
         </h1>
 
         <p
           className="anim-reveal max-w-sm font-sans text-base font-light leading-[1.7] text-muted-foreground"
           style={{ animationDelay: '160ms' }}
         >
-          Find your favorite place with spotea
+          Discover hidden gems, cozy work corners, and the finest brews near you
+          with Spotea
         </p>
       </div>
 
       <div
-        className="anim-reveal font-light leading-[1.7] relative z-10 max-w-md"
+        className="anim-reveal font-light leading-[1.7] relative z-10 max-w-md text-sm text-muted-foreground/80 border-l border-foreground/20 pl-4"
         style={{ animationDelay: '260ms' }}
       >
-        lorem ipsum
+        "Spotea completely changed how I find workspaces. I found my absolute
+        favorite quiet cafe on my very first day."
+        <span className="block mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          — Zein Irfansyah
+        </span>
       </div>
     </div>
   );

@@ -1,4 +1,16 @@
 services:
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   nginx:
     image: nginx:alpine
     ports:
@@ -24,6 +36,10 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_started
     expose:
       - "3000"
 
@@ -34,6 +50,10 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_started
     expose:
       - "3003"
 
@@ -44,6 +64,10 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_started
     expose:
       - "3001"
 
@@ -54,6 +78,10 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_started
     expose:
       - "3002"
 
@@ -64,5 +92,12 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_URL=http://localhost
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_started
     expose:
       - "3004"
+
+volumes:
+  redis_data:

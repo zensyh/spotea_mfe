@@ -3,12 +3,22 @@ export interface User {
   name: string;
   username: string;
   email?: string;
-  role: 'customer' | 'merchant' | 'admin';
+  role: 'CUSTOMER' | 'MERCHANT' | 'ADMIN';
 }
 
 export interface Session {
   user: User;
   token: string;
+}
+
+export interface SessionData {
+  accessToken: string;
+  refreshToken: string;
+  userId: string;
+  role: 'CUSTOMER' | 'MERCHANT' | 'ADMIN';
+  username: string;
+  name: string;
+  createdAt: string;
 }
 
 export interface LoginPayload {
@@ -27,6 +37,23 @@ export interface RegisterPayload {
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+export interface LoginApiResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: {
+      id: string;
+      username: string;
+      role: 'CUSTOMER' | 'MERCHANT' | 'ADMIN';
+      isActive: boolean;
+      createdAt: string;
+      updatedAt: string;
+    };
+    access_token: string;
+    refresh_token: string;
+  };
 }
 
 export interface ApiError {

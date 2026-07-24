@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createSessionCookie } from '@repo/auth';
 import { loginSchema } from '@/features/auth/login/components/form/form-model/login.schema';
 import { formatZodError } from '@/shared/lib/format-zod-validation';
+import {
+  createSession,
+  DEVICE_ID_COOKIE,
+  REFRESH_TOKEN_EXPIRES_IN_SECONDS,
+} from '@repo/auth';
+import { buildDeviceHeaders } from '@/shared/lib/bff-auth';
 
 export async function POST(request: Request) {
   try {
@@ -18,14 +23,21 @@ export async function POST(request: Request) {
     const backendUrl = process.env.BACKEND_API_URL;
     if (!backendUrl) {
       return NextResponse.json(
-        { message: 'Server tidak dikonfigurasi dengan benar' },
+        { message: 'Internal server error.' },
         { status: 500 },
       );
     }
 
+    const cookieHeader = request.headers.get('cookie') || '';
+    const existingDeviceId = extractCookie(cookieHeader, DEVICE_ID_COOKIE);
+    const deviceId = existingDeviceId || crypto.randomUUID();
+    const deviceCookieNeeded = !existingDeviceId;
+
+    const headers = buildDeviceHeaders(request, deviceId);
+
     const res = await fetch(`${backendUrl}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(parsed.data),
     });
 
@@ -33,22 +45,78 @@ export async function POST(request: Request) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { message: data.message || 'Login gagal' },
+        { message: data.message || 'Login failed.' },
         { status: res.status },
       );
     }
 
-    const { user, token } = data as { user: unknown; token: string };
-    const cookie = createSessionCookie(token);
+    const loginData = data.data;
+    if (!loginData) {
+      return NextResponse.json(
+        { message: 'Internal server error.' },
+        { status: 500 },
+      );
+    }
 
-    const response = NextResponse.json({ user }, { status: 200 });
-    response.cookies.set(cookie);
+    const sid = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const userName =
+      loginData.user.name || loginData.user.username || 'User';
 
-    return response;
+    await createSession(
+      sid,
+      {
+        accessToken: loginData.access_token,
+        refreshToken: loginData.refresh_token,
+        userId: loginData.user.id,
+        role: loginData.user.role,
+        username: loginData.user.username,
+        name: userName,
+        createdAt: now,
+      },
+      REFRESH_TOKEN_EXPIRES_IN_SECONDS,
+    );
+
+    const clientResponse = NextResponse.json(
+      {
+        user: {
+          id: loginData.user.id,
+          name: userName,
+          username: loginData.user.username,
+          role: loginData.user.role,
+        },
+      },
+      { status: 200 },
+    );
+
+    clientResponse.cookies.set('sid', sid, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    if (deviceCookieNeeded) {
+      clientResponse.cookies.set(DEVICE_ID_COOKIE, deviceId, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 365 * 24 * 60 * 60,
+      });
+    }
+
+    return clientResponse;
   } catch {
     return NextResponse.json(
-      { message: 'Terjadi kesalahan internal' },
+      { message: 'Internal server error.' },
       { status: 500 },
     );
   }
+}
+
+function extractCookie(cookieHeader: string, name: string): string | null {
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  if (!match) return null;
+  return match[1] ?? null;
 }

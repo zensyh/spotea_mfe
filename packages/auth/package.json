@@ -11,7 +11,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "jose": "^6.0.0"
+    "jose": "^6.0.0",
+    "ioredis": "^5.4.0"
   },
   "peerDependencies": {
     "next": ">=16"
