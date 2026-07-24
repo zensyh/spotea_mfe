@@ -1,14 +1,14 @@
-# Spotea
+# Spotea — Microfrontend Multizones
 
-**Microfrontend Multizones · Turborepo · Next.js 16 · Bun**
+**Turborepo · Next.js 16 · Bun**
+
+---
 
 ## Prerequisites
 
-- **Bun** (1.3.14 atau lebih baru)
-- **Node.js** (18 ke atas)
-- **Docker Desktop** (opsional, dibutuhkan untuk cross-zone links)
-
-Check this before:
+- Bun 1.3.14+
+- Node.js 18+
+- Docker Desktop
 
 ```bash
 bun --version
@@ -16,81 +16,127 @@ node --version
 docker --version
 ```
 
+Docker is optional. Apps run fine without it, tapi cross-zone routing via reverse proxy gak akan jalan.
+
 ---
 
-## Getting Started
-
-Clone repo, install, copy env template, then run.
+## Quick Start
 
 ```bash
-git clone <repo-url> spotea-mfe && cd spotea-mfe
 bun install
 cp .env.example .env
 bun dev
 ```
 
-Beberapa dev server akan jalan, masing-masing di port sendiri:
+Lima dev server muncul:
 
-- `http://localhost:3000` — shell (tanpa basePath)
-- `http://localhost:3001/app1`
-- `http://localhost:3002/app2`
-- `http://localhost:3003/app3`
-- `http://localhost:3004/app4`
+- shell — `http://localhost:3000`, no basePath, root /
+- merchant — `http://localhost:3001/merchant`, basePath /merchant
+- admin — `http://localhost:3002/admin`, basePath /admin
+- consumer — `http://localhost:3003/consumer`, basePath /consumer
+- account — `http://localhost:3004/account`, basePath /account
 
-Karena tiap app jalan di port terpisah, cross-zone links belum resolve sampai reverse proxy dipasang.
+Masing-masing jalan di port sendiri. Link cross-zone kayak `/merchant` dari shell gak akan resolve tanpa reverse proxy.
 
 ---
 
 ## Reverse Proxy
 
-nginx dipasang di depan semua app supaya semua request masuk lewat port 80 dan di-route berdasarkan path. Jalankan app seperti biasa, lalu di terminal kedua:
+Semua app di port beda -> link cross-zone broken. Solusi: nginx reverse proxy di port 80 routing based on path.
 
 ```bash
 docker compose -f docker-compose.dev.yml up
 ```
 
-Buka `http://localhost` (bukan port masing-masing). Routing:
+Buka `http://localhost` (instead of individual ports). Nginx routing:
 
-- `/app1/*` -> app1
-- `/app2/*` -> app2
-- `/app3/*` -> app3
-- `/app4/*` -> app4
-- sisanya -> shell
+- `/merchant/*` -> merchant app
+- `/admin/*` -> admin app
+- `/consumer/*` -> consumer app
+- `/account/*` -> account app
+- sisanya -> shell app
 
-Cross-zone links, cookies, dan auth jalan natural karena satu origin.
+Semua share satu origin. Hanya nginx yang jalan di Docker.
 
 ---
 
-## Commands
+## Redis — Session Store
+
+Auth pake Redis sebagai server-side session cache. Browser cuma pegang `sid` cookie (opaque session ID), token di Redis.
 
 ```bash
-bun dev                          # jalankan semua secara parallel
-bun dev --filter=app1        # filter satu app/package
-bun lint                         # lint seluruh repo
-bun check-types                  # type-check
-bun format                       # format
-bun add zustand --filter=app2   # tambah dependency ke app tertentu
+docker compose -f docker-compose.dev.yml up -d redis
 ```
 
-**Sebelum push**, jalankan verification pipeline lengkap:
+Available at `localhost:6379` (mapped to host).
+
+RedisInsight GUI di `http://localhost:5540`:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d redis redisinsight
+```
+
+Konek RedisInsight: Host `redis`, Port `6379`, Name `Spotea Local`. Hostname resolve via Docker internal DNS, no auth.
+
+---
+
+## Day-to-Day Commands
+
+```bash
+bun dev                          # all apps parallel
+bun dev --filter=merchant        # single app
+bun lint --filter=consumer
+bun check-types --filter=admin
+bun run build --filter=account
+bun lint                         # whole repo
+bun check-types
+bun format
+bun add zustand --filter=consumer
+bun add -d vitest --filter=@repo/ui
+```
+
+Before push:
 
 ```bash
 bun lint && bun check-types && bun run build
 ```
 
-Ketiganya harus pass tanpa error.
+Zero errors required.
+
+---
+
+## Project Layout
+
+```
+apps/
+  shell/             # no basePath, root /
+  merchant/          # basePath /merchant
+  admin/             # basePath /admin
+  consumer/          # basePath /consumer
+  account/           # basePath /account
+
+packages/
+  ui/                # @repo/ui — shared components
+  eslint-config/     # @repo/eslint-config
+  typescript-config/ # @repo/typescript-config
+
+nginx/               # reverse proxy configs
+```
+
+Setiap app adalah Next.js project independen. Code sharing lewat `packages/`, bukan cross-app import. Reverse proxy (nginx lokal / Vercel Multi-Zones di production) nyambungin semua di bawah satu domain.
 
 ---
 
 ## Environment Variables
 
-```bash
-cp .env.example .env
-```
+`cp .env.example .env`
 
-- `BACKEND_API_URL` — endpoint REST API.
-- `JWT_SECRET` — signing token server-side.
-- `NEXT_PUBLIC_APP_URL` — `http://localhost` untuk development, atau domain production.
+- `BACKEND_API_URL` — REST API base (e.g. `http://localhost:3033/api/v1`)
+- `JWT_SECRET` — Legacy token secret, backward compat
+- `NEXT_PUBLIC_APP_URL` — Public URL (`http://localhost` with nginx)
+- `REDIS_URL` — Redis connection (`redis://localhost:6379`)
+
+Semua app + `@repo/auth` butuh `REDIS_URL` buat read sessions. Shell juga write ke Redis (login/logout/refresh).
 
 ---
 
@@ -100,23 +146,28 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Tiap app di-build lewat multi-stage Dockerfile (`deps -> builder -> runner`) dengan Next.js `output: "standalone"`. Build satu image saja:
+Multi-stage Dockerfile (`deps -> builder -> runner`), Next.js `output: "standalone"`. Runtime cuma `server.js` + subset `node_modules`.
+
+Build single image:
 
 ```bash
-docker build -f apps/shell/Dockerfile -t shell .
+docker build -f apps/consumer/Dockerfile -t consumer .
 ```
 
 ---
 
 ## Architecture Notes
 
-- **`middleware.ts` sudah tidak ada di Next.js 16.** Tiap app pakai `proxy.ts`.
-- **Cross-zone navigation wajib pakai `<a>` atau `window.location.href`**, bukan `<Link>` / `router.push()` — app dengan basePath akan prepend basePath-nya ke tiap href.
-- **Dependencies flow inward.** Pages -> features -> shared code -> packages. Tidak sebaliknya.
-- **Semua HTTP lewat BFF.** Client memanggil fetcher -> `/api/*` route handler -> attach JWT -> backend. Tidak ada fetch langsung dari browser ke backend.
+1. **`middleware.ts` di Next.js 16 sudah dihapus.** Setiap app pake `proxy.ts`.
+
+2. **Cross-zone navigation: pake `<a>` atau `window.location.href`, jangan pake Next.js `<Link>` atau `router.push()`.** Apps dengan basePath otomatis prepend basePath-nya ke setiap href, jadi `<Link href="/admin">` dari merchant jadi `/merchant/admin` — wrong zone. Plain anchor atau `window.location.href` bypass Next.js router logic. Cross-zone berarti ninggalin satu Next.js app dan masuk ke app lain — bundle beda, React tree beda, port beda di dev. Full page load adalah behavior yang benar.
+
+3. **Dependency flow inward.** Pages -> features -> shared code -> packages. Never reverse.
+
+4. **Semua HTTP lewat BFF.** Client pake fetcher -> hits `/api/*` route handler -> attach JWT -> call real backend. No direct fetch from browser to backend.
 
 ---
 
-```bash
-initiate by: zein irfansyah
-```
+## Authors
+
+- zeinirfansyah
