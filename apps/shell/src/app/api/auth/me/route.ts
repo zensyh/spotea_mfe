@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { extractCookie } from '@/shared/lib/cookie-utils';
 import { getSessionData } from '@repo/auth';
 
 export async function GET(request: Request) {
@@ -41,8 +42,4 @@ export async function GET(request: Request) {
   }
 }
 
-function extractCookie(cookieHeader: string, name: string): string | null {
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  if (!match) return null;
-  return match[1] ?? null;
-}
+

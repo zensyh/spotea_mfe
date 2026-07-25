@@ -40,7 +40,6 @@ export function useRegister(): UseRegisterReturn {
   const onSubmit = async (values: RegisterFormValues) => {
     const user = await register(values);
 
-    console.log('usr', user);
     if (user) {
       await router.push('/login?registered=1');
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loginSchema } from '@/features/auth/login/components/form/form-model/login.schema';
 import { formatZodError } from '@/shared/lib/format-zod-validation';
+import { extractCookie } from '@/shared/lib/cookie-utils';
 import {
   createSession,
   DEVICE_ID_COOKIE,
@@ -115,8 +116,4 @@ export async function POST(request: Request) {
   }
 }
 
-function extractCookie(cookieHeader: string, name: string): string | null {
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  if (!match) return null;
-  return match[1] ?? null;
-}
+

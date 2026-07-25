@@ -11,16 +11,6 @@ export interface Session {
   token: string;
 }
 
-export interface SessionData {
-  accessToken: string;
-  refreshToken: string;
-  userId: string;
-  role: 'CUSTOMER' | 'MERCHANT' | 'ADMIN';
-  username: string;
-  name: string;
-  createdAt: string;
-}
-
 export interface LoginPayload {
   username: string;
   password: string;
