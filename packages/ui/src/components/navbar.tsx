@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Menu, X } from 'lucide-react';
 import { cn } from '#lib/utils';
 
@@ -16,25 +16,36 @@ interface NavbarProps {
   className?: string;
 }
 
-const linkClass =
-  'group relative font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground';
-
 function NavLink({ item }: { item: NavItem }) {
   return (
-    <a href={item.href} className={linkClass}>
+    <a
+      href={item.href}
+      className="group relative font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground py-3 sm:py-0"
+    >
       {item.label}
       <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full" />
     </a>
   );
 }
 
-export function Navbar({
-  items,
-  brand,
-  rightSlot,
-  className,
-}: NavbarProps) {
+export function Navbar({ items, brand, rightSlot, className }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 640px)');
+
+    const handleMediaQueryChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setMobileOpen(false);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleMediaQueryChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaQueryChange);
+    };
+  }, []);
 
   return (
     <header
@@ -76,7 +87,7 @@ export function Navbar({
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/20"
+            className="fixed inset-0 z-40"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />

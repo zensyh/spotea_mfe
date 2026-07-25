@@ -17,12 +17,6 @@ interface NavDropdownProps {
   className?: string;
 }
 
-const triggerClass =
-  'group relative font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground';
-
-const itemClass =
-  'block w-full px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
-
 export function NavDropdown({
   label,
   items,
@@ -62,7 +56,7 @@ export function NavDropdown({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={cn(triggerClass, 'flex items-center gap-1')}
+        className="group relative flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
       >
         {label}
         <ChevronDown
@@ -71,43 +65,42 @@ export function NavDropdown({
             open && 'rotate-180',
           )}
         />
+        <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full" />
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-1 w-40 border border-border bg-background"
+          className={cn(
+            'z-50 border-0 sm:border sm:border-border bg-background',
+            'relative mt-2 w-full',
+            'sm:absolute sm:right-0 sm:top-full sm:mt-1 sm:w-44',
+          )}
         >
-          {items.map((item) => {
-            if (item.action) {
-              return (
-                <form
-                  key={item.label}
-                  action={item.action}
-                  method={item.method || 'POST'}
-                >
+          {items.map((item, i) => (
+            <div key={item.label} className="group/menu">
+              {i > 0 && <div className="h-px bg-border" />}
+              {item.action ? (
+                <form action={item.action} method={item.method || 'POST'}>
                   <button
                     type="submit"
                     role="menuitem"
-                    className={cn(itemClass, 'cursor-pointer')}
+                    className="w-full px-4 py-2.5 text-left font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors group-hover/menu:text-foreground cursor-pointer"
                   >
                     {item.label}
                   </button>
                 </form>
-              );
-            }
-
-            return (
-              <a
-                key={item.label}
-                href={item.href}
-                role="menuitem"
-                className={itemClass}
-              >
-                {item.label}
-              </a>
-            );
-          })}
+              ) : (
+                <a
+                  href={item.href}
+                  role="menuitem"
+                  className="block px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground transition-colors group-hover/menu:text-foreground"
+                >
+                  {item.label}
+                </a>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
