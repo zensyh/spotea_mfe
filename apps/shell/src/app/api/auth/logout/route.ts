@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { extractCookie } from '@/shared/lib/cookie-utils';
 import { getSessionData, deleteSession } from '@repo/auth';
 
 const BACKEND_API_URL = process.env.BACKEND_API_URL;
@@ -43,8 +44,4 @@ export async function POST(request: Request) {
   }
 }
 
-function extractCookie(cookieHeader: string, name: string): string | null {
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  if (!match) return null;
-  return match[1] ?? null;
-}
+

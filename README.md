@@ -170,4 +170,4 @@ docker build -f apps/consumer/Dockerfile -t consumer .
 
 ## Authors
 
-- zeinirfansyah
+- zeinirfansyah (zensyh)
