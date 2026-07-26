@@ -54,7 +54,7 @@ export function Navbar({ items, brand, rightSlot, className }: NavbarProps) {
         className,
       )}
     >
-      <div className="mx-auto flex h-14 items-center justify-between px-6">
+      <div className="mx-auto max-w-7xl flex h-14 items-center justify-between px-6">
         <div className="flex items-center gap-2">
           {brand && (
             <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
