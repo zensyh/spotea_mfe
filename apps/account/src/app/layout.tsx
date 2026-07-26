@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { redirect } from 'next/navigation';
 import { verifySession } from '@repo/auth';
+import { Navbar } from '@repo/ui/components/navbar';
+import { NavDropdown } from '@repo/ui/components/nav-dropdown';
 import './globals.css';
 
 const geistSans = Geist({
@@ -37,7 +39,28 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Navbar
+          brand="ACCOUNT"
+          items={[
+            { label: 'Profile', href: '/account' },
+            { label: 'Security', href: '/account/security' },
+            { label: 'Consumer', href: '/consumer' },
+            { label: 'Merchant', href: '/merchant' },
+            { label: 'Admin', href: '/admin' },
+          ]}
+          rightSlot={
+            <NavDropdown
+              label="Account"
+              items={[
+                { label: 'Profile', href: '/account' },
+                { label: 'Logout', action: '/api/auth/logout', method: 'POST' },
+              ]}
+            />
+          }
+        />
+        {children}
+      </body>
     </html>
   );
 }
