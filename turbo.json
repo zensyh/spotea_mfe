@@ -5,7 +5,9 @@
     "NODE_ENV",
     "REDIS_URL",
     "BACKEND_API_URL",
-    "NEXT_PUBLIC_APP_URL"
+    "NEXT_PUBLIC_APP_URL",
+    "BFF_REFRESH_LOCK_TTL_SECONDS",
+    "BFF_POLL_INTERVAL_MS"
   ],
   "tasks": {
     "build": {
