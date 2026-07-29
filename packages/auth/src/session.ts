@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { COOKIE_NAME } from './cookie';
 import { getSessionData } from './session-store';
+import { HttpError } from './http-error';
 import type { Session } from './types';
 
 export async function verifySession(): Promise<Session | null> {
@@ -26,14 +27,10 @@ export async function verifySession(): Promise<Session | null> {
   }
 }
 
-export async function getSession(): Promise<Session | null> {
-  return verifySession();
-}
-
 export async function requireSession(): Promise<Session> {
   const session = await verifySession();
   if (!session) {
-    throw new Error('Unauthorized: session tidak ditemukan');
+    throw new HttpError(401, 'Unauthorized: session tidak ditemukan');
   }
   return session;
 }

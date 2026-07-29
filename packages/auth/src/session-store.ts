@@ -16,6 +16,7 @@ export interface SessionData {
 const SESSION_PREFIX = 'session:';
 const USER_SESSIONS_PREFIX = 'user_sessions:';
 const LOCK_PREFIX = 'lock:refresh:';
+const REFRESH_STATUS_PREFIX = 'refresh_status:';
 
 function sessionKey(sid: string): string {
   return `${SESSION_PREFIX}${sid}`;
@@ -27,6 +28,10 @@ function userSessionsKey(userId: string): string {
 
 function lockKey(sid: string): string {
   return `${LOCK_PREFIX}${sid}`;
+}
+
+function refreshStatusKey(sid: string): string {
+  return `${REFRESH_STATUS_PREFIX}${sid}`;
 }
 
 export async function createSession(
@@ -115,4 +120,22 @@ export async function acquireRefreshLock(
 export async function releaseRefreshLock(sid: string): Promise<void> {
   const redis = getRedis();
   await redis.del(lockKey(sid));
+}
+
+export async function setRefreshFailed(sid: string): Promise<void> {
+  const redis = getRedis();
+  // 10s TTL — long enough for all polling waiters to detect failure,
+  // short enough to auto-clean if a waiter never checks.
+  await redis.set(refreshStatusKey(sid), 'failed', 'EX', '10');
+}
+
+export async function getRefreshFailed(sid: string): Promise<boolean> {
+  const redis = getRedis();
+  const status = await redis.get(refreshStatusKey(sid));
+  return status === 'failed';
+}
+
+export async function clearRefreshFailed(sid: string): Promise<void> {
+  const redis = getRedis();
+  await redis.del(refreshStatusKey(sid));
 }

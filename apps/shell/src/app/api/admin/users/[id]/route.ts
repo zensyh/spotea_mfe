@@ -1,27 +1,24 @@
 import { NextResponse } from 'next/server';
-import { extractCookie } from '@/shared/lib/cookie-utils';
 import { parseBody } from '@/shared/lib/body-utils';
-import { getSessionData, authenticatedFetch, deleteUserSessions } from '@repo/auth';
+import { requireSession, protectedFetch, deleteUserSessions, HttpError } from '@repo/auth';
+import { handleApi } from '@/shared/lib/handle-api';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function PATCH(request: Request, { params }: RouteParams) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost';
 
-    const adminSession = await getSessionData(sid);
-    if (!adminSession || adminSession.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+export async function PATCH(request: Request, { params }: RouteParams) {
+  return handleApi(async () => {
+    const session = await requireSession();
+
+    if (session.user.role !== 'ADMIN') {
+      throw new HttpError(403, 'Forbidden');
     }
 
     const { id } = await params;
     const body = await parseBody(request);
 
-    const res = await authenticatedFetch(sid, `/admin/users/${id}`, {
+    const res = await protectedFetch(session.token, `/admin/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
     });
@@ -32,31 +29,21 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     }
 
     return NextResponse.json(data, { status: res.status });
-  } catch {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 },
-    );
-  }
+  });
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  return handleApi(async () => {
+    const session = await requireSession();
 
-    const adminSession = await getSessionData(sid);
-    if (!adminSession || adminSession.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    if (session.user.role !== 'ADMIN') {
+      throw new HttpError(403, 'Forbidden');
     }
 
     const { id } = await params;
     const body = await parseBody(request);
 
-    const res = await authenticatedFetch(sid, `/admin/users/${id}`, {
+    const res = await protectedFetch(session.token, `/admin/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body),
     });
@@ -68,15 +55,10 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     if (res.ok) {
       return NextResponse.redirect(
-        new URL('/admin/sessions', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost'),
+        new URL('/admin/sessions', APP_URL),
       );
     }
 
     return NextResponse.json(data, { status: res.status });
-  } catch {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 },
-    );
-  }
+  });
 }

@@ -1,4 +1,4 @@
-import { verifySession, COOKIE_NAME, authenticatedFetch } from '@repo/auth';
+import { verifySession, COOKIE_NAME, protectedFetch } from '@repo/auth';
 import { cookies } from 'next/headers';
 
 export default async function Home() {
@@ -19,7 +19,7 @@ export default async function Home() {
     const cookieStore = await cookies();
     const sid = cookieStore.get(COOKIE_NAME)?.value;
     if (sid) {
-      const res = await authenticatedFetch(sid, '/profile');
+      const res = await protectedFetch(sid, '/profile');
       const body = await res.json();
       profileResult = JSON.stringify(body, null, 2);
     }

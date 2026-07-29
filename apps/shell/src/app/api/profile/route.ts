@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { extractCookie } from '@/shared/lib/cookie-utils';
 import { parseBody } from '@/shared/lib/body-utils';
-import { authenticatedFetch, updateSession } from '@repo/auth';
+import { requireSession, protectedFetch, updateSession } from '@repo/auth';
+import { handleApi } from '@/shared/lib/handle-api';
 
 async function handleProfileUpdate(sid: string, body: Record<string, unknown>) {
-  const res = await authenticatedFetch(sid, '/profile', {
+  const res = await protectedFetch(sid, '/profile', {
     method: 'PATCH',
     body: JSON.stringify(body),
   });
@@ -20,29 +20,17 @@ async function handleProfileUpdate(sid: string, body: Record<string, unknown>) {
 }
 
 export async function PATCH(request: Request) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  return handleApi(async () => {
+    const session = await requireSession();
     const body = await parseBody(request);
-    return await handleProfileUpdate(sid, body);
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+    return await handleProfileUpdate(session.token, body);
+  });
 }
 
 export async function POST(request: Request) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  return handleApi(async () => {
+    const session = await requireSession();
     const body = await parseBody(request);
-    return await handleProfileUpdate(sid, body);
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+    return await handleProfileUpdate(session.token, body);
+  });
 }

@@ -1,45 +1,20 @@
 import { NextResponse } from 'next/server';
-import { extractCookie } from '@/shared/lib/cookie-utils';
-import { getSessionData } from '@repo/auth';
+import { requireSession } from '@repo/auth';
+import { handleApi } from '@/shared/lib/handle-api';
 
-export async function GET(request: Request) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-
-    if (!sid) {
-      return NextResponse.json(
-        { message: 'Tidak terautentikasi' },
-        { status: 401 },
-      );
-    }
-
-    const sessionData = await getSessionData(sid);
-
-    if (!sessionData) {
-      return NextResponse.json(
-        { message: 'Tidak terautentikasi' },
-        { status: 401 },
-      );
-    }
-
+export async function GET() {
+  return handleApi(async () => {
+    const session = await requireSession();
     return NextResponse.json(
       {
         user: {
-          id: sessionData.userId,
-          name: sessionData.name,
-          username: sessionData.username,
-          role: sessionData.role,
+          id: session.user.id,
+          name: session.user.name,
+          username: session.user.username,
+          role: session.user.role,
         },
       },
       { status: 200 },
     );
-  } catch {
-    return NextResponse.json(
-      { message: 'Tidak terautentikasi' },
-      { status: 401 },
-    );
-  }
+  });
 }
-
-

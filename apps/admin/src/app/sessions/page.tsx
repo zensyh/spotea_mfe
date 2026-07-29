@@ -1,4 +1,4 @@
-import { verifySession, COOKIE_NAME, authenticatedFetch, getUserSessions } from '@repo/auth';
+import { verifySession, COOKIE_NAME, protectedFetch, getUserSessions } from '@repo/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -21,7 +21,7 @@ export default async function AdminSessionsPage() {
   let error: string | null = null;
 
   try {
-    const res = await authenticatedFetch(sid, '/admin/users');
+    const res = await protectedFetch(sid, '/admin/users');
     const body = await res.json();
     if (body.success && body.data) {
       users = body.data.users || body.data;

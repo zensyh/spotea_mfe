@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { extractCookie } from '@/shared/lib/cookie-utils';
 import { parseBody } from '@/shared/lib/body-utils';
-import { authenticatedFetch, updateSession } from '@repo/auth';
+import { requireSession, protectedFetch, updateSession } from '@repo/auth';
+import { handleApi } from '@/shared/lib/handle-api';
 
 async function handleUsernameChange(sid: string, body: Record<string, unknown>) {
-  const res = await authenticatedFetch(sid, '/profile/username', {
+  const res = await protectedFetch(sid, '/profile/username', {
     method: 'PUT',
     body: JSON.stringify(body),
   });
@@ -18,29 +18,17 @@ async function handleUsernameChange(sid: string, body: Record<string, unknown>) 
 }
 
 export async function PUT(request: Request) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  return handleApi(async () => {
+    const session = await requireSession();
     const body = await parseBody(request);
-    return await handleUsernameChange(sid, body);
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+    return await handleUsernameChange(session.token, body);
+  });
 }
 
 export async function POST(request: Request) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  return handleApi(async () => {
+    const session = await requireSession();
     const body = await parseBody(request);
-    return await handleUsernameChange(sid, body);
-  } catch {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
+    return await handleUsernameChange(session.token, body);
+  });
 }

@@ -1,4 +1,4 @@
-export { verifySession } from './session';
+export { verifySession, requireSession } from './session';
 export {
   createSession,
   getSessionData,
@@ -6,9 +6,11 @@ export {
   deleteSession,
   getUserSessions,
   deleteUserSessions,
+  clearRefreshFailed,
 } from './session-store';
 export type { SessionData } from './session-store';
-export { authenticatedFetch } from './bff-fetch';
+export { protectedFetch } from './bff-fetch';
+export { HttpError } from './http-error';
 export { COOKIE_NAME, DEVICE_ID_COOKIE, REFRESH_TOKEN_EXPIRES_IN_SECONDS } from './cookie';
 export type {
   User,

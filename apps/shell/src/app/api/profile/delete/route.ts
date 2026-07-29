@@ -1,25 +1,16 @@
 import { NextResponse } from 'next/server';
-import { extractCookie } from '@/shared/lib/cookie-utils';
 import { parseBody } from '@/shared/lib/body-utils';
-import { getSessionData, authenticatedFetch, deleteUserSessions, deleteSession } from '@repo/auth';
+import { requireSession, protectedFetch, deleteUserSessions, deleteSession } from '@repo/auth';
+import { handleApi } from '@/shared/lib/handle-api';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost';
 
 export async function POST(request: Request) {
-  try {
-    const cookieHeader = request.headers.get('cookie') || '';
-    const sid = extractCookie(cookieHeader, 'sid');
-    if (!sid) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const session = await getSessionData(sid);
-    if (!session) {
-      return NextResponse.json({ message: 'Session expired' }, { status: 401 });
-    }
-
+  return handleApi(async () => {
+    const session = await requireSession();
     const body = await parseBody(request);
-    const res = await authenticatedFetch(sid, '/profile/delete', {
+
+    const res = await protectedFetch(session.token, '/profile/delete', {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -27,8 +18,9 @@ export async function POST(request: Request) {
     const data = await res.json();
 
     if (res.ok) {
-      await deleteUserSessions(session.userId);
-      await deleteSession(sid);
+      await deleteUserSessions(session.user.id);
+      await deleteSession(session.token);
+
       const response = NextResponse.redirect(new URL('/login', APP_URL));
       response.cookies.set('sid', '', {
         httpOnly: true,
@@ -41,10 +33,5 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(data, { status: res.status });
-  } catch {
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 },
-    );
-  }
+  });
 }
