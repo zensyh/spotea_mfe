@@ -29,7 +29,7 @@ export default async function EditProfilePage() {
   return (
     <div>
       <h1>Edit Profile</h1>
-      <form action="/api/profile" method="POST">
+      <form action="/account/api/profile" method="POST">
         <div>
           <label>Name</label>
           <br />

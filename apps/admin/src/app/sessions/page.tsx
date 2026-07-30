@@ -65,7 +65,7 @@ export default async function AdminSessionsPage() {
               <td>
                 {u.sessionCount > 0 && (
                   <form
-                    action="/api/admin/users/revoke-sessions"
+                    action="/admin/api/admin/users/revoke-sessions"
                     method="POST"
                   >
                     <input type="hidden" name="userId" value={u.id} />
@@ -74,7 +74,7 @@ export default async function AdminSessionsPage() {
                 )}
                 {u.isActive && (
                   <form
-                    action={`/api/admin/users/${u.id}`}
+                    action={`/admin/api/admin/users/${u.id}`}
                     method="POST"
                   >
                     <input type="hidden" name="_method" value="PATCH" />
