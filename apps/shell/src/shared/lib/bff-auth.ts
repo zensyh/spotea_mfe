@@ -1,5 +1,3 @@
-export { protectedFetch } from '@repo/auth';
-
 function getDeviceName(userAgent: string | null): string {
   if (!userAgent) return 'Web Browser';
   if (userAgent.includes('Chrome') && !userAgent.includes('Edg'))

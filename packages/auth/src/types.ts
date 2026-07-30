@@ -24,11 +24,6 @@ export interface RegisterPayload {
   email?: string;
 }
 
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
-
 export interface LoginApiResponse {
   success: boolean;
   message: string;
@@ -44,9 +39,4 @@ export interface LoginApiResponse {
     access_token: string;
     refresh_token: string;
   };
-}
-
-export interface ApiError {
-  message: string;
-  status?: number;
 }
