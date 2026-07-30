@@ -7,7 +7,7 @@ import {
   DEVICE_ID_COOKIE,
   REFRESH_TOKEN_EXPIRES_IN_SECONDS,
 } from '@repo/auth';
-import { buildDeviceHeaders } from '@/shared/lib/bff-auth';
+import { buildDeviceHeaders } from '@/shared/lib/device-headers';
 
 export async function POST(request: Request) {
   try {

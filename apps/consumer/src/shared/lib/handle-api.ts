@@ -13,7 +13,7 @@ export async function handleApi(
         { status: error.status },
       );
     }
-    console.error(`[shell] Unhandled API error:`, error);
+    console.error(`[consumer] Unhandled API error:`, error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 },
