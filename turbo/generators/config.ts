@@ -27,6 +27,12 @@ const UTILITIES = [
     description: 'Client-side fetch wrapper (JSON + ApiError)',
     needs: 'Client components calling /api routes',
   },
+  {
+    name: 'form-guard.tsx',
+    value: 'form-guard',
+    description: 'Form wrapper preventing double-submit via ref guard',
+    needs: 'Server components with native <form action="POST">',
+  },
 ] as const;
 
 const TEMPLATE_DIR = 'templates/plumbing';
@@ -34,7 +40,7 @@ const TEMPLATE_DIR = 'templates/plumbing';
 export default function generator(plop: PlopTypes.NodePlopAPI): void {
   plop.setGenerator('plumbing', {
     description:
-      'Scaffold shared plumbing utilities into a zone (handle-api, body-utils, fetcher)',
+      'Scaffold shared plumbing utilities into a zone (handle-api, body-utils, fetcher, form-guard)',
     prompts: [
       {
         type: 'list',
@@ -86,6 +92,14 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
           type: 'add',
           path: `{{ turbo.paths.root }}/apps/${zone}/src/shared/lib/fetcher.ts`,
           templateFile: `${TEMPLATE_DIR}/fetcher.ts.hbs`,
+        });
+      }
+
+      if (selected.includes('form-guard')) {
+        actions.push({
+          type: 'add',
+          path: `{{ turbo.paths.root }}/apps/${zone}/src/shared/lib/form-guard.tsx`,
+          templateFile: `${TEMPLATE_DIR}/form-guard.tsx.hbs`,
         });
       }
 

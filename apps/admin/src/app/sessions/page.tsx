@@ -1,6 +1,7 @@
 import { verifySession, COOKIE_NAME, protectedFetch, getUserSessions } from '@repo/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { FormGuard } from '@/shared/lib/form-guard';
 
 export default async function AdminSessionsPage() {
   const session = await verifySession();
@@ -64,23 +65,17 @@ export default async function AdminSessionsPage() {
               <td>{u.sessionCount}</td>
               <td>
                 {u.sessionCount > 0 && (
-                  <form
-                    action="/admin/api/admin/users/revoke-sessions"
-                    method="POST"
-                  >
+                  <FormGuard action="/admin/api/admin/users/revoke-sessions">
                     <input type="hidden" name="userId" value={u.id} />
                     <button type="submit">Revoke All Sessions</button>
-                  </form>
+                  </FormGuard>
                 )}
                 {u.isActive && (
-                  <form
-                    action={`/admin/api/admin/users/${u.id}`}
-                    method="POST"
-                  >
+                  <FormGuard action={`/admin/api/admin/users/${u.id}`}>
                     <input type="hidden" name="_method" value="PATCH" />
                     <input type="hidden" name="isActive" value="false" />
                     <button type="submit">Deactivate</button>
-                  </form>
+                  </FormGuard>
                 )}
               </td>
             </tr>

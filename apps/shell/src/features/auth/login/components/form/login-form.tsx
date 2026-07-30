@@ -38,6 +38,7 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: LoginFormValues) {
+    if (loading) return;
     const user = await login(values);
     if (user) {
       window.location.assign(resolveRoleHome(user.role));

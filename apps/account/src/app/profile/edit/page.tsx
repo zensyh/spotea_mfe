@@ -1,5 +1,6 @@
 import { verifySession, getSessionData, COOKIE_NAME } from '@repo/auth';
 import { cookies } from 'next/headers';
+import { FormGuard } from '@/shared/lib/form-guard';
 
 export default async function EditProfilePage() {
   const session = await verifySession();
@@ -29,7 +30,7 @@ export default async function EditProfilePage() {
   return (
     <div>
       <h1>Edit Profile</h1>
-      <form action="/account/api/profile" method="POST">
+      <FormGuard action="/account/api/profile">
         <div>
           <label>Name</label>
           <br />
@@ -57,7 +58,7 @@ export default async function EditProfilePage() {
         </div>
         <br />
         <button type="submit">Save</button>
-      </form>
+      </FormGuard>
       <br />
       <a href="/account/profile">Back</a>
     </div>
