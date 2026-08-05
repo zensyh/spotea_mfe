@@ -7,7 +7,7 @@ import {
   getRefreshFailed,
   clearRefreshFailed,
 } from './session-store';
-import { REFRESH_TOKEN_EXPIRES_IN_SECONDS } from './cookie';
+import { API_PREFIX, REFRESH_TOKEN_EXPIRES_IN_SECONDS } from './cookie';
 import type { LoginApiResponse } from './types';
 
 const BACKEND_API_URL = process.env.BACKEND_API_URL;
@@ -52,7 +52,9 @@ export async function protectedFetch(
     });
   }
 
-  const url = `${BACKEND_API_URL}${path}`;
+  const url = `${BACKEND_API_URL}${API_PREFIX}${path}`;
+
+  console.log(url)
 
   const hasContentType = Object.keys(options.headers || {}).some(
     (k) => k.toLowerCase() === 'content-type',
