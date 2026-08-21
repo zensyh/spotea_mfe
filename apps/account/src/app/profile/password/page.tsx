@@ -14,7 +14,7 @@ export default async function ChangePasswordPage() {
   return (
     <div>
       <h1>Change Password</h1>
-      <form action="/api/profile/password" method="POST">
+      <form action="/account/api/profile/password" method="POST">
         <div>
           <label>Current Password</label>
           <br />

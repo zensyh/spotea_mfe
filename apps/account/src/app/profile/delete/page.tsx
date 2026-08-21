@@ -17,7 +17,7 @@ export default async function DeleteAccountPage() {
       <p>This action is permanent and cannot be undone.</p>
       <p>Your account will be deactivated and all your data will be removed.</p>
       <br />
-      <form action="/api/profile/delete" method="POST">
+      <form action="/account/api/profile/delete" method="POST">
         <input type="hidden" name="confirm" value="true" />
         <button type="submit">
           Delete My Account

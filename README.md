@@ -91,6 +91,7 @@ bun run build --filter=account
 bun lint                         # whole repo
 bun check-types
 bun format
+bun turbo gen plumbing           # scaffold plumbing utilities into a zone
 bun add zustand --filter=consumer
 bun add -d vitest --filter=@repo/ui
 ```
@@ -117,8 +118,12 @@ apps/
 
 packages/
   ui/                # @repo/ui — shared components
+  auth/              # @repo/auth — session/Redis auth
   eslint-config/     # @repo/eslint-config
   typescript-config/ # @repo/typescript-config
+
+turbo/
+  generators/        # turbo gen scaffolding templates
 
 nginx/               # reverse proxy configs
 ```
@@ -135,8 +140,10 @@ Setiap app adalah Next.js project independen. Code sharing lewat `packages/`, bu
 - `JWT_SECRET` — Legacy token secret, backward compat
 - `NEXT_PUBLIC_APP_URL` — Public URL (`http://localhost` with nginx)
 - `REDIS_URL` — Redis connection (`redis://localhost:6379`)
+- `BFF_REFRESH_LOCK_TTL_SECONDS` — Token refresh lock TTL in seconds (default: `7`)
+- `BFF_POLL_INTERVAL_MS` — Polling interval for concurrent waiters in ms (default: `200`)
 
-Semua app + `@repo/auth` butuh `REDIS_URL` buat read sessions. Shell juga write ke Redis (login/logout/refresh).
+Semua app + `@repo/auth` butuh `REDIS_URL` buat read sessions. Shell juga write ke Redis (login/logout/refresh). BFF vars hanya dibaca oleh `@repo/auth` (protectedFetch).
 
 ---
 
@@ -156,15 +163,93 @@ docker build -f apps/consumer/Dockerfile -t consumer .
 
 ---
 
-## Architecture Notes
+## Architecture
 
-1. **`middleware.ts` di Next.js 16 sudah dihapus.** Setiap app pake `proxy.ts`.
+### Philosophy
 
-2. **Cross-zone navigation: pake `<a>` atau `window.location.href`, jangan pake Next.js `<Link>` atau `router.push()`.** Apps dengan basePath otomatis prepend basePath-nya ke setiap href, jadi `<Link href="/admin">` dari merchant jadi `/merchant/admin` — wrong zone. Plain anchor atau `window.location.href` bypass Next.js router logic. Cross-zone berarti ninggalin satu Next.js app dan masuk ke app lain — bundle beda, React tree beda, port beda di dev. Full page load adalah behavior yang benar.
+Spotea MFE is a **microfrontend** monorepo — not a monolith with code splitting. Each app under `apps/` is an independent Next.js project with its own build, deploy, and team. The monorepo exists for coordination via Turborepo, but the goal is **team autonomy and independent deployability**.
 
-3. **Dependency flow inward.** Pages -> features -> shared code -> packages. Never reverse.
+### Zone Layout
 
-4. **Semua HTTP lewat BFF.** Client pake fetcher -> hits `/api/*` route handler -> attach JWT -> call real backend. No direct fetch from browser to backend.
+| Zone | Port | basePath | Business Domain |
+|---|---|---|---|
+| shell | 3000 | `/` | Auth (login, register, logout), landing |
+| merchant | 3001 | `/merchant` | Merchant management |
+| admin | 3002 | `/admin` | Admin dashboard, user management |
+| consumer | 3003 | `/consumer` | Consumer-facing features |
+| account | 3004 | `/account` | User profile & settings |
+
+Zones do **not** import from each other. Code sharing only through `packages/`.
+
+### Shared Packages Rule
+
+Shared packages hold **domain logic or brand standards** — things that would be bugs if they diverged between zones.
+
+| Package | Why Shared |
+|---|---|
+| `@repo/auth` | Domain — session, token, role logic. If two zones disagree → user can log in on one but not the other. Bug. |
+| `@repo/ui` | Brand — design system, components, tokens. If two zones disagree → user sees different UIs. Trust collapse. |
+| `@repo/eslint-config` | Tooling — consistent lint rules across all workspaces. |
+| `@repo/typescript-config` | Tooling — consistent TS config basis. |
+
+### Plumbing vs Domain
+
+```
+packages/           ← Domain logic & brand (MUST be identical)
+  auth/             ← Session, tokens, roles
+  ui/               ← Design system, consistency
+
+apps/*/shared/lib/  ← Plumbing (owned per zone, may diverge)
+  handle-api.ts     ← Route handler error wrapper
+  body-utils.ts     ← Request body parser
+  fetcher.ts        ← Client-side fetch wrapper
+```
+
+**Plumbing is intentionally duplicated.** Each zone owns its plumbing files and can modify them without impacting other zones. This is correct MFE behavior — independence over DRY. The DRY principle applies to **knowledge**, not code. Two zones having the same 21-line `handle-api.ts` is not knowledge duplication; if Admin needs a different error format, it changes its own file — no PR, no coordination, no breaking other zones.
+
+### Scaffolding
+
+Add or refresh plumbing in a zone:
+
+```bash
+bun turbo gen plumbing
+```
+
+Interactive prompts: select zone → select utilities. Templates at `turbo/generators/templates/plumbing/`. Generated files are identical at creation time but independently owned by each zone after generation.
+
+### Next.js 16 Notes
+
+- **`middleware.ts` is removed.** Use `src/proxy.ts` with `export function proxy(request: NextRequest)` instead.
+- **Flat ESLint config** only: `eslint.config.mjs`.
+- **React Compiler** enabled via `reactCompiler: true` in `next.config.ts`.
+- **Tailwind CSS v4** via `@tailwindcss/postcss` plugin.
+- All apps use `output: 'standalone'`.
+
+### Cross-Zone Navigation
+
+**Always use `<a href>` or `window.location.href` for links between zones.** Never use Next.js `<Link>` or `router.push()`.
+
+Apps with `basePath` automatically prepend it to every `<Link>` href. A `<Link href="/admin">` from merchant becomes `/merchant/admin` — wrong zone, wrong app. Plain anchors bypass Next.js router logic. Cross-zone means leaving one app's bundle entirely — a full page load is correct behavior.
+
+### BFF Pattern
+
+```
+Browser → /api/* route handler → BACKEND_API_URL (with JWT)
+```
+
+No direct browser-to-backend fetch. All API calls go through the zone's own route handler, which attaches the JWT from the server-side session and proxies to the real backend.
+
+### Auth
+
+```
+Browser: opaque "sid" cookie only
+Server (Redis): session { userId, accessToken, refreshToken, role, ... }
+```
+
+- Shell is the **only** zone that writes sessions (login, register, logout)
+- All zones read sessions via `verifySession()` / `requireSession()` from `@repo/auth`
+- Token refresh uses Redis locks with polling — `protectedFetch()` handles transparent refresh
+
 
 ---
 

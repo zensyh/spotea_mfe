@@ -1,4 +1,4 @@
-import { verifySession, COOKIE_NAME, authenticatedFetch } from '@repo/auth';
+import { verifySession, COOKIE_NAME, protectedFetch } from '@repo/auth';
 import { cookies } from 'next/headers';
 
 export default async function ProfilePage() {
@@ -21,7 +21,7 @@ export default async function ProfilePage() {
 
   if (sid) {
     try {
-      const res = await authenticatedFetch(sid, '/profile');
+      const res = await protectedFetch(sid, '/profile');
       const body = await res.json();
       if (body.success && body.data) {
         profileEmail = body.data.email ?? null;

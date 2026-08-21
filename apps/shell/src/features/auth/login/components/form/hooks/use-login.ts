@@ -26,9 +26,8 @@ export function useLogin(): UseLoginReturn {
       const message =
         err instanceof ApiError ? err.message : 'Terjadi kesalahan';
       setError(message);
-      return null;
-    } finally {
       setLoading(false);
+      return null;
     }
   }, []);
 

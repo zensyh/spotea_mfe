@@ -31,13 +31,13 @@ export function useRegister(): UseRegisterReturn {
       const message =
         err instanceof ApiError ? err.message : 'Terjadi kesalahan';
       setError(message);
-      return null;
-    } finally {
       setLoading(false);
+      return null;
     }
   }, []);
 
   const onSubmit = async (values: RegisterFormValues) => {
+    if (loading) return;
     const user = await register(values);
 
     if (user) {
